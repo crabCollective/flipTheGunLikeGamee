@@ -19,7 +19,7 @@ var KEY_ANIM_JETPACKFIRE = "jpFire";
 
 //This is the game access point
 window.onload = function() {
-  game = new Phaser.Game(360, 640, Phaser.AUTO);
+  game = new Phaser.Game(480, 640, Phaser.AUTO);
 
   game.state.add(KEY_STATE_BOOT, State_boot);
   game.state.add(KEY_STATE_PRELOAD, State_preload);
