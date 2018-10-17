@@ -19,7 +19,8 @@ var KEY_ANIM_JETPACKFIRE = "jpFire";
 
 //This is the game access point
 window.onload = function() {
-  game = new Phaser.Game(480, 640, Phaser.AUTO);
+  //TODO tohle asi bude chtit udelat lip - asi omezit max. sirku?
+  game = new Phaser.Game(window.innerWidth,  window.innerHeight, Phaser.AUTO);
 
   game.state.add(KEY_STATE_BOOT, State_boot);
   game.state.add(KEY_STATE_PRELOAD, State_preload);

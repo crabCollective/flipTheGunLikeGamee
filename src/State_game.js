@@ -59,21 +59,25 @@ var State_game = {
     this.heroLayer.add(this.cat);
 
     //some vars definition
+    this.gameeWrapper = GameeWrapper.getInstance();
     this.currentAmmo = gameOptions.VAL_MAX_AMMO;
     this.firstTouch = true;
     this.catCopyOnTheScreen = false;
     this.catCopy = null;
     this.catDirection = null;
     this.score = 0;
-
     this.generator = new ObjectGenerator(DifficultyEnum.EASY);
-
-    //create UI
     this.UI = new UIHandler();
 
-    //start physics system
-    this.configPhysics();
-    game.input.onDown.add(this.proccesClickInput, this);
+
+    this.gameeWaitLoop = null;
+    this.gameeWrapper._setGameeCallback(GAMEE_CALLBACK_START, this.startGame.bind(this));
+    //Check if the game is initialized and if so, call game ready
+    if (this.gameeWrapper._isInitialized()) {
+      this.gameeWrapper._setGameReady();
+      //otherwise run game loop and wait for gamee init
+    } else this.gameeWaitLoop = game.time.events.loop(100, this.waitForGameeInit, this);
+
   },
 
   update: function() {
@@ -84,7 +88,8 @@ var State_game = {
       if (this.lastCamPos > game.camera.y) {
         //score
         this.score += (this.lastCamPos - game.camera.y);
-        this.UI.setScore(this.score);
+        //this.UI.setScore(this.score / 10);
+        this.gameeWrapper._updateScore(Math.round(this.score/10));
 
         //generate shit - //TODO make it more complicated
         if ((this.lastCamPosGen - game.camera.y) >= gameOptions.VAL_GENERATEINTERVAL) {
@@ -145,6 +150,19 @@ var State_game = {
     //game.debug.physicsGroup(this.cat);
   },
 
+  //Called by GAMEE Start Callback
+  startGame: function() {
+    this.configPhysics();
+    game.input.onDown.add(this.proccesClickInput, this);
+  },
+
+  waitForGameeInit: function() {
+    if (this.gameeWrapper._isInitialized()) {
+      game.time.events.remove(this.gameeWaitLoop);
+      this.gameeWrapper._setGameReady();
+    }
+  },
+
   proccesClickInput: function() {
     if (this.currentAmmo == 0) {
       game.camera.flash(0xff0000, 250);
@@ -193,11 +211,6 @@ var State_game = {
 
     item.killItem();
     this.sceneObjectsLayer.remove(item);
-    // var index = this.sceneObjectsLayer.indexOf(item);
-    // if (index > -1) {
-    //   console.log("Item found on index " + index + ", REMOVING!!!");
-    //   array.splice(index, 1);
-    // }
   },
 
   addAmmo: function() {
@@ -232,6 +245,8 @@ var State_game = {
     //check dead
     if (this.cat.y >= (game.camera.y + game.world.height)) {
       //TODO do cleanup, show some text
+      //gamee.gameOver();
+      this.gameeWrapper._setGameOver();
       game.state.restart();
       return;
     }

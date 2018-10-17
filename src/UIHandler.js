@@ -15,7 +15,7 @@ UIHandler.prototype = Object.create(Object.prototype);
 UIHandler.prototype.constructor = UIHandler;
 
 UIHandler.prototype.initializeUI = function() {
-  var ammoBar = game.add.sprite(game.world.centerX, game.camera.y + game.world.height*.07, KEY_UI_AMMO_BAR);
+  var ammoBar = game.add.sprite(game.world.centerX, game.camera.y + game.world.height*.13, KEY_UI_AMMO_BAR);
   ammoBar.fixedToCamera = true;
   ammoBar.anchor.setTo(0.5);
 
@@ -28,14 +28,16 @@ UIHandler.prototype.initializeUI = function() {
     this.ammoSprites.push(ammo);
   }
 
-  var scoreText = game.add.text(game.world.centerX,ammoBar.bottom+10,"SCORE:", UIfontStyle);
-  scoreText.anchor.setTo(1, 0);
-  scoreText.fixedToCamera = true;
-
-  this.scoreValText = game.add.text(scoreText.right + 10,scoreText.y,"0", UIfontStyle);
-  this.scoreValText.fixedToCamera = true;
+  //Unused now
+  // var scoreText = game.add.text(game.world.centerX,ammoBar.bottom+10,"SCORE:", UIfontStyle);
+  // scoreText.anchor.setTo(1, 0);
+  // scoreText.fixedToCamera = true;
+  //
+  // this.scoreValText = game.add.text(scoreText.right + 10,scoreText.y,"0", UIfontStyle);
+  // this.scoreValText.fixedToCamera = true;
 };
 
+//unused now
 UIHandler.prototype.setScore = function(scoreVal) {
   this.scoreValText.setText(scoreVal.toString());
 };

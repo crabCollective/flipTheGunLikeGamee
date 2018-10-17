@@ -1,6 +1,8 @@
 //first state entered - init some settings and preload files needed on load screen
 var State_boot = {
   init: function() {
+    GameeWrapper.getInstance()._initGame();
+
     game.scale.pageAlignHorizontally = true;
     game.scale.pageAlignVertically = true;
     game.scale.scaleMode = Phaser.ScaleManager.SHOW_ALL;
@@ -20,6 +22,12 @@ var State_boot = {
       //   document.getElementById("wrongorientation").style.display = "none";
       // })
     }
+  },
+
+  afterInitTest: function(error, data) {
+    console.log("THIS IS GAMEE INIT CALLBACK!!!!!!");
+    if(error !== null)
+        throw error;
   },
 
   preload: function() {
