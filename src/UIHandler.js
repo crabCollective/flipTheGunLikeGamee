@@ -15,17 +15,20 @@ UIHandler.prototype = Object.create(Object.prototype);
 UIHandler.prototype.constructor = UIHandler;
 
 UIHandler.prototype.initializeUI = function() {
-  var ammoBar = game.add.sprite(game.world.centerX, game.camera.y + game.world.height*.13, KEY_UI_AMMO_BAR);
-  ammoBar.fixedToCamera = true;
-  ammoBar.anchor.setTo(0.5);
+  this.ammoBar = game.add.sprite(game.world.centerX, game.camera.y + game.world.height*.13, KEY_UI_AMMO_BAR);
+  this.ammoBar.fixedToCamera = true;
+  this.ammoBar.anchor.setTo(0.5);
 
-  for (var i = 1; i <= State_game.currentAmmo; i++) {
-    var ammo = game.add.sprite(ammoBar.left + i*this.ammoOffset, ammoBar.y, KEY_UI_AMMO);
+  for (var i = 1; i <= gameOptions.VAL_MAX_AMMO; i++) {
+    var ammo = game.add.sprite(this.ammoBar.left + i*this.ammoOffset, this.ammoBar.y, KEY_UI_AMMO);
     ammo.fixedToCamera = true;
     ammo.anchor.setTo(0.5);
     ammo.bringToTop();
 
     this.ammoSprites.push(ammo);
+
+    if (i > State_game.currentAmmo)
+      ammo.kill();
   }
 
   //Unused now
@@ -38,9 +41,9 @@ UIHandler.prototype.initializeUI = function() {
 };
 
 //unused now
-UIHandler.prototype.setScore = function(scoreVal) {
-  this.scoreValText.setText(scoreVal.toString());
-};
+// UIHandler.prototype.setScore = function(scoreVal) {
+//   this.scoreValText.setText(scoreVal.toString());
+// };
 
 UIHandler.prototype.removeAmmo = function() {
   this.ammoSprites[State_game.currentAmmo-1].kill();
@@ -48,4 +51,14 @@ UIHandler.prototype.removeAmmo = function() {
 
 UIHandler.prototype.addAmmo = function() {
   this.ammoSprites[State_game.currentAmmo-1].revive();
+};
+
+UIHandler.prototype.setScore = function(scoreVal) {
+  this.scoreValText.setText(scoreVal.toString());
+};
+
+UIHandler.prototype.destroyUIElements = function(scoreVal) {
+  this.ammoBar.destroy();
+  for (var i = this.ammoSprites.length-1; i >= 0; i--)
+    this.ammoSprites[i].destroy();
 };

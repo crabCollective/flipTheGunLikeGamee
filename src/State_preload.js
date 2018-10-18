@@ -4,7 +4,7 @@ var State_preload = {
     //show loading images
     var catImg = game.add.image(game.world.centerX, game.world.centerY, KEY_SPRITE_CATHEAD);
     catImg.anchor.setTo(0.5);
-    //TODO loading bar could be positioned more flexibly regarding the image above
+
     var preloadBar = game.add.image(game.world.centerX, game.world.centerY + 170, KEY_UI_MONEYBOX);
     preloadBar.anchor.setTo(0.5);
     game.load.setPreloadSprite(preloadBar);
@@ -15,6 +15,7 @@ var State_preload = {
     game.load.image(KEY_SPRITE_AMMO, 'assets/sprites/energy/bullet.png');
     game.load.image(KEY_UI_AMMO_BAR, 'assets/sprites/energy/bar.png');
     game.load.image(KEY_UI_AMMO, 'assets/sprites/energy/small_energy.png');
+    game.load.audio('explosion', 'assets/sounds/explosion.mp3');
 
     game.load.spritesheet(KEY_SPRITESHEET_JPFIRE, 'assets/sprites/jetpack_fire/jet_pack_sheet.png', 203, 359);
   },

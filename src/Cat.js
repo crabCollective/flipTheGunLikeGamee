@@ -20,6 +20,9 @@ Cat = function(startPosY) {
     this.addChild(this.jetpackFire);
     this.jetpackFire.visible = false;
 
+    //some vars
+    this.alive = true;
+    
     game.physics.arcade.enable(this, Phaser.Physics.ARCADE);
 };
 

@@ -16,11 +16,14 @@ var KEY_UI_AMMO_BAR = "ammoBar";
 var KEY_UI_AMMO = "ammoUI";
 
 var KEY_ANIM_JETPACKFIRE = "jpFire";
+var MAX_WIDTH = 375;
+var MAX_HEIGHT = 667;
 
 //This is the game access point
 window.onload = function() {
-  //TODO tohle asi bude chtit udelat lip - asi omezit max. sirku?
-  game = new Phaser.Game(window.innerWidth,  window.innerHeight, Phaser.AUTO);
+  //TODO tohle bude pak chtit na zarizenich s velkym displejem udelat lip
+  game = new Phaser.Game(Math.min(window.innerWidth, MAX_WIDTH),
+    Math.min(window.innerHeight, MAX_HEIGHT), Phaser.AUTO);
 
   game.state.add(KEY_STATE_BOOT, State_boot);
   game.state.add(KEY_STATE_PRELOAD, State_preload);

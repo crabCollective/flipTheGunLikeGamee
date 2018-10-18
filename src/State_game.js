@@ -25,13 +25,8 @@ var DirectionEnum = {
 };
 
 var State_game = {
-  preload: function() {
-    //tady uz by melo byt vsechno preloadnute
-  },
-
   create: function() {
     game.physics.startSystem(Phaser.Physics.ARCADE);
-
     //set BG color
     game.stage.backgroundColor = "#58D3F7";
 
@@ -42,6 +37,8 @@ var State_game = {
     //create cat //TODO make cat more polished
     this.cat = new Cat(this.startHouse.top);
     this.cat.y -= this.cat.height / 3;
+
+    this.explosion = game.add.audio('explosion');
 
     //set camera follow - set camera bounds to null to allow move outside of world bounds
     this.offsetForCamMove = game.world.height * gameOptions.VAL_TOPCAMOFFSET;
@@ -54,42 +51,94 @@ var State_game = {
 
     //create layers
     this.sceneObjectsLayer = this.game.add.group();
-    //this.sceneObjectsLayer = [];
     this.heroLayer = this.game.add.group();
     this.heroLayer.add(this.cat);
 
     //some vars definition
     this.gameeWrapper = GameeWrapper.getInstance();
-    this.currentAmmo = gameOptions.VAL_MAX_AMMO;
+
+    //this.currentAmmo = gameOptions.VAL_MAX_AMMO;
     this.firstTouch = true;
     this.catCopyOnTheScreen = false;
     this.catCopy = null;
     this.catDirection = null;
     this.score = 0;
+    this.scoreUpdateCounter = 0;
     this.generator = new ObjectGenerator(DifficultyEnum.EASY);
-    this.UI = new UIHandler();
+    this.configPhysics();
 
+    //SHOW FPS
+    game.plugins.add(Phaser.Plugin.AdvancedTiming);
+    this.gameeSetCallbacks();
 
     this.gameeWaitLoop = null;
-    this.gameeWrapper._setGameeCallback(GAMEE_CALLBACK_START, this.startGame.bind(this));
     //Check if the game is initialized and if so, call game ready
-    if (this.gameeWrapper._isInitialized()) {
-      this.gameeWrapper._setGameReady();
+    if (this.gameeWrapper._isGameReady()) {
+      this.gameeInitStartVars();
+      this.startGame();
+    }
+    else if (this.gameeWrapper._isInitialized()) {
+      this.gameeSetGameReady();
       //otherwise run game loop and wait for gamee init
     } else this.gameeWaitLoop = game.time.events.loop(100, this.waitForGameeInit, this);
+  },
 
+  gameeSetGameReady: function() {
+    this.gameeInitStartVars();
+    this.gameeWrapper._setGameReady();
+  },
+
+  gameeSetCallbacks: function() {
+    console.log("SETTING IMPORTANT CALLBACKS!!!!");
+    this.startGameCb = this.startGame.bind(this);
+    this.pauseGameCb = this.pauseGame.bind(this);
+    this.resumeGameCb = this.resumeGame.bind(this);
+
+    this.gameeWrapper._setGameeCallback(GAMEE_CALLBACK_START, this.startGameCb);
+    this.gameeWrapper._setGameeCallback(GAMEE_CALLBACK_PAUSE, this.pauseGameCb);
+    this.gameeWrapper._setGameeCallback(GAMEE_CALLBACK_RESUME, this.resumeGameCb);
+  },
+
+  gameeRemoveCallbacks: function() {
+    console.log("REMOVING IMPORTANT CALLBACKS!!!!");
+    this.gameeWrapper._removeGameeCallback(GAMEE_CALLBACK_START, this.startGameCb);
+    this.gameeWrapper._removeGameeCallback(GAMEE_CALLBACK_PAUSE, this.pauseGameCb);
+    this.gameeWrapper._removeGameeCallback(GAMEE_CALLBACK_RESUME, this.resumeGameCb);
+  },
+
+  gameeInitStartVars() {
+    console.log("SETTING GAME READY!!!!");
+    var savedData = this.gameeWrapper._getSaveState();
+    if (savedData)
+      this.overallScore = JSON.parse(savedData).totalScore;
+    else {
+      this.overallScore = 0;
+    }
+    var gameSetting = GameSettingsHandler.InitializeVars(this.overallScore);
+    this.currentAmmo = gameSetting.ammunition;
+    gameOptions.VAL_BOUNCESPEED_MAX = gameSetting.velocity;
+
+    this.UI = new UIHandler();
   },
 
   update: function() {
     if (!this.firstTouch) {
       //check behaviour when being on the edge of camera
       this.checkCameraEdgesBehaviour();
+
       //did we go up?
       if (this.lastCamPos > game.camera.y) {
+        this.scoreUpdateCounter++;
         //score
-        this.score += (this.lastCamPos - game.camera.y);
-        //this.UI.setScore(this.score / 10);
-        this.gameeWrapper._updateScore(Math.round(this.score/10));
+        this.score += (this.lastCamPos - game.camera.y)/10;
+        //update score each 10th frame
+        if (this.scoreUpdateCounter == 10) {
+          this.gameeWrapper._updateScore(Math.round(this.score));
+          this.scoreUpdateCounter = 0;
+        }
+        //this.gameeWrapper._updateScore(this.score);
+        //TODO remove later
+        //gamee.updateScore(this.score);
 
         //generate shit - //TODO make it more complicated
         if ((this.lastCamPosGen - game.camera.y) >= gameOptions.VAL_GENERATEINTERVAL) {
@@ -151,19 +200,57 @@ var State_game = {
   },
 
   //Called by GAMEE Start Callback
-  startGame: function() {
-    this.configPhysics();
-    game.input.onDown.add(this.proccesClickInput, this);
+  startGame: function(event) {
+    //console.log("HEEJ!!!! START CALLBACK!!!!");
+    if (this.firstTouch)
+      game.input.onDown.add(this.proccesClickInput, this);
+    else {
+      //console.log("RESTARTING GAMEEEEEEEEEEEEEEEEEEEEEEEEEE ");
+      this.gameeRemoveCallbacks();
+
+      //clean the field
+      this.sceneObjectsLayer.destroy();
+      delete this.generator;
+      this.UI.destroyUIElements();
+      delete this.UI;
+
+      game.state.restart();
+    }
+
+    if (event)
+      event.detail.callback();
+  },
+
+  endGame: function() {
+    this.gameeWrapper._updateScore(Math.round(this.score));
+
+    game.camera.follow(null);
+    this.cat.alive = false;
+    this.cat.destroy();
+
+    var dataToSave = {
+      totalScore: Math.round(this.overallScore + this.score)
+    };
+
+    this.gameeWrapper._saveGame(JSON.stringify(dataToSave));
+    this.gameeWrapper._setGameOver();
+
+    //TODO tady by to chtelo ulozene data znova ziskat, ale nefunguji nektere metody...
+    //udelal jsem workaround v saveGame metode ve wrapperu
   },
 
   waitForGameeInit: function() {
     if (this.gameeWrapper._isInitialized()) {
       game.time.events.remove(this.gameeWaitLoop);
-      this.gameeWrapper._setGameReady();
+      this.gameeSetGameReady();
     }
   },
 
   proccesClickInput: function() {
+    console.log("IS CAT ALIVE??? " + this.cat.alive);
+    if (!this.cat.alive || (!this.firstTouch && game.paused))
+      return;
+
     if (this.currentAmmo == 0) {
       game.camera.flash(0xff0000, 250);
       return;
@@ -186,7 +273,7 @@ var State_game = {
       else this.cat.body.angularVelocity = -gameOptions.VAL_ANGULARVELOCITY;
     }
 
-    //TODO camera shake
+    this.explosion.play();
     game.camera.shake(0.02, 200);
     this.cat.showJetpackFire();
     this.UI.removeAmmo();
@@ -243,11 +330,8 @@ var State_game = {
 
   checkCameraEdgesBehaviour: function() {
     //check dead
-    if (this.cat.y >= (game.camera.y + game.world.height)) {
-      //TODO do cleanup, show some text
-      //gamee.gameOver();
-      this.gameeWrapper._setGameOver();
-      game.state.restart();
+    if (this.cat.alive && this.cat.y >= (game.camera.y + game.world.height)) {
+      this.endGame();
       return;
     }
 
@@ -274,6 +358,18 @@ var State_game = {
     //     this.destroyCatCopy();
     //   }
     // }
+  },
+
+  pauseGame: function(event) {
+    console.log("HEEEJ!!! PAUSE!!!");
+    game.paused = true;
+    event.detail.callback();
+  },
+
+  resumeGame: function(event) {
+    console.log("HEEEJ!!! RESUME!!!");
+    game.paused = false;
+    event.detail.callback();
   },
 
   //CURRENTLY NOT IN USE

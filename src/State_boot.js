@@ -2,6 +2,7 @@
 var State_boot = {
   init: function() {
     GameeWrapper.getInstance()._initGame();
+    GameeWrapper.setBasicCallbacks();
 
     game.scale.pageAlignHorizontally = true;
     game.scale.pageAlignVertically = true;
